@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { styleProfiles } from "@/lib/schema";
 import { requireUser, bad } from "@/lib/guard";
-import { structured } from "@/lib/claude";
+import { structured } from "@/lib/llm";
 import { STYLE_DERIVE_SYSTEM, STYLE_TOOL, styleDeriveUser } from "@/lib/prompts";
 import type { StyleDerived } from "@/lib/types";
 import { eq } from "drizzle-orm";

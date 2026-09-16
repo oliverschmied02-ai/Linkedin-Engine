@@ -25,7 +25,7 @@ deinem eingeloggten Browser ohnehin auf dem Bildschirm steht.
 
 ## Stack
 
-Next.js 15 (App Router) · Drizzle ORM · Postgres · Anthropic SDK · Tailwind
+Next.js 15 (App Router) · Drizzle ORM · Postgres · LLM provider-agnostisch (OpenAI-kompatibel) · Tailwind
 
 ## Deploy auf Railway
 
@@ -36,11 +36,16 @@ Next.js 15 (App Router) · Drizzle ORM · Postgres · Anthropic SDK · Tailwind
 
    | Variable | Zweck |
    |---|---|
-   | `ANTHROPIC_API_KEY` | API-Key von console.anthropic.com |
+   | `LLM_API_KEY` | API-Key deines LLM-Anbieters (z.B. openrouter.ai — Free-Modelle verfügbar) |
    | `APP_PASSWORD` | Passwort für das Web-UI |
    | `COLLECTOR_KEY` | langer Zufallsstring; Shared Secret für das Userscript |
    | `NEXT_PUBLIC_APP_URL` | die öffentliche Railway-URL, z.B. `https://…up.railway.app` |
-   | `ANTHROPIC_MODEL` | optional, Default `claude-sonnet-4-5` |
+   | `LLM_BASE_URL` | optional, Default `https://openrouter.ai/api/v1` |
+   | `LLM_MODEL` | optional, Default `meta-llama/llama-3.3-70b-instruct` |
+
+   Die Anbindung ist provider-agnostisch (OpenAI-kompatibles Chat-Completions-Format mit
+   Function-Calling). Beispiele für OpenRouter, Groq, Ollama und Anthropic stehen in
+   `.env.example`; das Modell muss Function-Calling können.
 
 4. Deployen. Der Startbefehl (`railway.json`) legt das Schema per `drizzle-kit push` selbst an.
 5. `/setup` in der App öffnen und dem Ablauf dort folgen.

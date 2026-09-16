@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { capturedPosts, commentDrafts, styleProfiles } from "@/lib/schema";
 import { requireUser, bad } from "@/lib/guard";
-import { structured } from "@/lib/claude";
+import { structured } from "@/lib/llm";
 import { COMMENT_SYSTEM, COMMENT_TOOL, commentUser } from "@/lib/prompts";
 import { renderStyle } from "@/lib/types";
 import type { CommentVariant, StyleDerived } from "@/lib/types";

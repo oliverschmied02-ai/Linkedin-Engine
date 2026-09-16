@@ -48,7 +48,7 @@ export default function StyleEditor() {
 
   async function derive() {
     if (!p) return;
-    setBusy("Claude analysiert deinen Stil …");
+    setBusy("Das Modell analysiert deinen Stil …");
     const r = await fetch(`/api/style/${p.id}/derive`, { method: "POST" });
     if (!r.ok) { setBusy(""); alert((await r.json()).error || "Fehler"); return; }
     setBusy("Profil abgeleitet");

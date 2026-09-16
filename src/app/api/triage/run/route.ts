@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { capturedPosts, styleProfiles } from "@/lib/schema";
 import { requireUserOrCollector } from "@/lib/guard";
-import { structured } from "@/lib/claude";
+import { structured } from "@/lib/llm";
 import { TRIAGE_SYSTEM, TRIAGE_TOOL, triageUser } from "@/lib/prompts";
 import type { TriageResult, StyleDerived } from "@/lib/types";
 import { and, desc, eq, isNull } from "drizzle-orm";
