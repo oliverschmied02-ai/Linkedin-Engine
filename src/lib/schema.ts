@@ -4,6 +4,13 @@ import { randomUUID } from "crypto";
 
 const id = () => text("id").primaryKey().$defaultFn(() => randomUUID());
 
+/** Key-Value-Einstellungen (z.B. LLM-Anbieter und Modelle), im UI änderbar. */
+export const appSettings = pgTable("app_settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 /** Dein Schreibstil — pro Sprache und/oder Kontext. */
 export const styleProfiles = pgTable("style_profiles", {
   id: id(),

@@ -8,6 +8,7 @@ const nav = [
   { href: "/outbox", label: "Outbox" },
   { href: "/targets", label: "Watchlist" },
   { href: "/style", label: "Stilprofil" },
+  { href: "/settings", label: "Modell" },
   { href: "/setup", label: "Setup" },
 ];
 

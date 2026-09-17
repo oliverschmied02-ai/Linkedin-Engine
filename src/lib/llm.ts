@@ -1,17 +1,18 @@
 /**
  * Provider-agnostischer LLM-Client über das OpenAI-kompatible Chat-Completions-Format.
  *
- * Funktioniert mit jedem Anbieter, der /chat/completions mit Function-Calling spricht:
- *   OpenRouter   LLM_BASE_URL=https://openrouter.ai/api/v1     LLM_MODEL=z.B. meta-llama/llama-3.3-70b-instruct
- *   Groq         LLM_BASE_URL=https://api.groq.com/openai/v1   LLM_MODEL=z.B. llama-3.3-70b-versatile
- *   Ollama       LLM_BASE_URL=http://localhost:11434/v1        LLM_MODEL=z.B. qwen2.5:14b (LLM_API_KEY=ollama)
- *   Anthropic    LLM_BASE_URL=https://api.anthropic.com/v1     LLM_MODEL=z.B. claude-sonnet-4-5
+ * Base-URL und Modelle kommen aus den App-Einstellungen (UI → DB), Env-Variablen sind
+ * nur Fallback. Der API-Key kommt ausschließlich aus der Env (LLM_API_KEY).
+ *
+ * Getestete Anbieter-Muster:
+ *   OpenRouter   https://openrouter.ai/api/v1     z.B. meta-llama/llama-3.3-70b-instruct
+ *   Groq         https://api.groq.com/openai/v1   z.B. llama-3.3-70b-versatile
+ *   Ollama       http://localhost:11434/v1        z.B. qwen2.5:14b (LLM_API_KEY=ollama)
+ *   Anthropic    https://api.anthropic.com/v1     z.B. claude-sonnet-4-5
  */
+import { getLlmSettings } from "./settings";
 
-const BASE_URL = (process.env.LLM_BASE_URL || "https://openrouter.ai/api/v1").replace(/\/$/, "");
-export const MODEL = process.env.LLM_MODEL || "meta-llama/llama-3.3-70b-instruct";
-
-function apiKey() {
+export function apiKey() {
   const key = process.env.LLM_API_KEY;
   if (!key) throw new Error("LLM_API_KEY fehlt");
   return key;
@@ -34,16 +35,22 @@ function parseJsonLoose(text: string): unknown {
 
 /**
  * Ruft das Modell mit erzwungenem Tool-Use auf und gibt das geparste Tool-Input zurück.
+ * `task` wählt das Modell: "triage" für die Relevanzbewertung (billig/frei reicht),
+ * "generate" (Default) für Entwürfe und Stilanalyse.
  * Fallback für Modelle, die tool_choice ignorieren: JSON aus dem Antworttext parsen.
  */
 export async function structured<T>(opts: {
   system: string;
   user: string;
   tool: ToolDef;
+  task?: "triage" | "generate";
   maxTokens?: number;
   temperature?: number;
 }): Promise<T> {
-  const res = await fetch(`${BASE_URL}/chat/completions`, {
+  const settings = await getLlmSettings();
+  const model = opts.task === "triage" ? settings.modelTriage : settings.modelGenerate;
+
+  const res = await fetch(`${settings.baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -52,7 +59,7 @@ export async function structured<T>(opts: {
       "X-Title": "LinkedIn Engine",
     },
     body: JSON.stringify({
-      model: MODEL,
+      model,
       max_tokens: opts.maxTokens ?? 2000,
       temperature: opts.temperature ?? 0.7,
       messages: [
@@ -75,7 +82,7 @@ export async function structured<T>(opts: {
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    throw new Error(`LLM-Anfrage fehlgeschlagen (${res.status} ${MODEL}): ${body.slice(0, 500)}`);
+    throw new Error(`LLM-Anfrage fehlgeschlagen (${res.status} ${model}): ${body.slice(0, 500)}`);
   }
 
   const data = (await res.json()) as {

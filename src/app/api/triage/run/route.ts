@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
   for (const post of posts) {
     try {
       const r = await structured<TriageResult>({
+        task: "triage",
         system: TRIAGE_SYSTEM,
         user: triageUser({
           post: {

@@ -40,12 +40,11 @@ Next.js 15 (App Router) · Drizzle ORM · Postgres · LLM provider-agnostisch (O
    | `APP_PASSWORD` | Passwort für das Web-UI |
    | `COLLECTOR_KEY` | langer Zufallsstring; Shared Secret für das Userscript |
    | `NEXT_PUBLIC_APP_URL` | die öffentliche Railway-URL, z.B. `https://…up.railway.app` |
-   | `LLM_BASE_URL` | optional, Default `https://openrouter.ai/api/v1` |
-   | `LLM_MODEL` | optional, Default `meta-llama/llama-3.3-70b-instruct` |
-
    Die Anbindung ist provider-agnostisch (OpenAI-kompatibles Chat-Completions-Format mit
-   Function-Calling). Beispiele für OpenRouter, Groq, Ollama und Anthropic stehen in
-   `.env.example`; das Modell muss Function-Calling können.
+   Function-Calling). **Anbieter und Modelle wählst du im UI unter `/settings`** — inkl.
+   Modell-Dropdown vom Anbieter und getrennten Modellen für Triage (billig/frei reicht) und
+   Generierung (Qualität zählt). `LLM_BASE_URL`/`LLM_MODEL`/`LLM_MODEL_TRIAGE` in der Env sind
+   nur Startwerte; der Key bleibt bewusst ausschließlich in der Env.
 
 4. Deployen. Der Startbefehl (`railway.json`) legt das Schema per `drizzle-kit push` selbst an.
 5. `/setup` in der App öffnen und dem Ablauf dort folgen.
