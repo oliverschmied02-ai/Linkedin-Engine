@@ -223,3 +223,35 @@ export const COMMENT_TOOL = {
     required: ["variants"],
   },
 };
+
+export const ENRICH_SYSTEM = `Du fasst LinkedIn-Profile für eine Watchlist zusammen. Der Nutzer will
+auf einen Blick einschätzen, ob es sich lohnt, den Posts dieser Person zu folgen und dort zu kommentieren.
+
+Regeln:
+- Stütze dich nur auf die gelieferten Daten (Headline, About-Text, ggf. jüngste Posts). Erfinde nichts.
+- Konkret statt generisch: Themen, Positionen, Zielgruppe — nicht "erfahrener Experte".
+- 2-3 Sätze, in der Sprache des Profils (bei Unklarheit Deutsch).`;
+
+export function enrichUser(data: { name: string; headline: string; about: string; recentPosts?: string }) {
+  return `Profil:
+Name: ${data.name}
+Headline: ${data.headline || "—"}
+
+About-Sektion:
+${data.about || "—"}
+${data.recentPosts?.trim() ? `\nJüngste Posts (Ausschnitte):\n${data.recentPosts}` : ""}
+
+Fasse zusammen, wofür diese Person steht.`;
+}
+
+export const ENRICH_TOOL = {
+  name: "profil_zusammenfassung",
+  description: "Kurzbeschreibung, wofür eine LinkedIn-Person steht.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      summary: { type: "string", description: "2-3 Sätze: Themen, Positionen, Zielgruppe dieser Person." },
+    },
+    required: ["summary"],
+  },
+};

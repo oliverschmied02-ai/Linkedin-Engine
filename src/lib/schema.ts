@@ -36,6 +36,12 @@ export const watchTargets = pgTable("watch_targets", {
   headline: text("headline").notNull().default(""),
   /// Warum relevant — fließt in Triage und Kommentar-Generierung ein.
   notes: text("notes").notNull().default(""),
+  /// Anreicherung vom Profil: Follower-Zahl, Rohtext der About-Sektion,
+  /// LLM-Kurzbeschreibung "wofür steht die Person".
+  followers: integer("followers"),
+  about: text("about").notNull().default(""),
+  summary: text("summary").notNull().default(""),
+  enrichedAt: timestamp("enriched_at", { withTimezone: true }),
   priority: integer("priority").notNull().default(2),
   active: boolean("active").notNull().default(true),
   lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),

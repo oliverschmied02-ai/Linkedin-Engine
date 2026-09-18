@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         LinkedIn Engine Collector
 // @namespace    linkedin-engine
-// @version      0.3.0
+// @version      0.4.0
 // @description  Liest Posts aus deinem LinkedIn-Feed / von Profilseiten aus und schickt sie an deine LinkedIn Engine. Fügt freigegebene Kommentare in die Kommentarbox ein (Absenden machst du selbst).
 // @match        https://www.linkedin.com/*
 // @grant        GM_xmlhttpRequest
@@ -190,6 +190,7 @@
     </header>
     <div class="body">
       <button class="primary" id="le-collect">Sichtbare Posts einsammeln</button>
+      <button id="le-profile">Profil erfassen (Watchlist)</button>
       <div class="row">
         <button id="le-scroll">Scrollen + sammeln</button>
         <button id="le-triage">Triage starten</button>
@@ -224,6 +225,51 @@
   }
 
   document.getElementById("le-collect").onclick = () => collect("Sammeln");
+
+  // ---- Profil erfassen: Name, Headline, About, Follower → /api/targets/enrich
+  function scrapeProfile() {
+    const m = location.href.match(/linkedin\.com\/in\/[^/?#]+/);
+    if (!m) return null;
+    const profileUrl = "https://www." + m[0].replace(/^.*linkedin/, "linkedin") + "/";
+
+    const name = txt(document.querySelector("main h1")).split("\n")[0];
+    const headline = txt(document.querySelector("main .text-body-medium.break-words")).split("\n")[0];
+
+    // Follower: Text-Suche, weil LinkedIn hier keine stabilen Klassen hat
+    let followers = 0;
+    for (const el of document.querySelectorAll("main span, main p")) {
+      const t = el.innerText || "";
+      if (t.length < 60 && /Follower|followers/i.test(t)) {
+        const n = parseCount(t);
+        if (n > followers) followers = n;
+      }
+    }
+
+    // About-Sektion: div#about ist der Anker, der Text liegt im Geschwister-Bereich
+    let about = "";
+    const anchor = document.querySelector("#about");
+    if (anchor && anchor.closest("section")) {
+      const sec = anchor.closest("section");
+      const body = sec.querySelector(".inline-show-more-text, .display-flex.ph5.pv3, [class*='line-clamp']");
+      about = txt(body || sec).replace(/^(Info|About)\s*/i, "").replace(/…\s*(mehr|see more)$/i, "").trim();
+    }
+
+    // Ausschnitte der jüngsten Posts als Kontext für die Kurzbeschreibung
+    const recentPosts = scrapePosts().slice(0, 3).map((p) => p.text.slice(0, 400)).join("\n---\n");
+
+    return { profileUrl, name, headline, about, followers: followers || undefined, recentPosts };
+  }
+
+  document.getElementById("le-profile").onclick = async () => {
+    const p = scrapeProfile();
+    if (!p) { log("Kein Profil — funktioniert nur auf linkedin.com/in/…-Seiten."); return; }
+    if (!p.name) { log("Profil noch nicht geladen — kurz warten und nochmal."); return; }
+    log(`Erfasse ${p.name} …`);
+    try {
+      const r = await api("/api/targets/enrich", "POST", p);
+      log(`${r.target.name} gespeichert${r.target.followers ? ` · ${r.target.followers} Follower` : ""}${r.target.summary ? " · Beschreibung erstellt" : ""}. Weiter in der App (Watchlist).`);
+    } catch (e) { log("Fehler: " + e.message); }
+  };
 
   document.getElementById("le-scroll").onclick = async () => {
     log("Scrolle …");
