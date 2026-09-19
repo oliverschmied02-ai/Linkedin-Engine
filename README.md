@@ -40,6 +40,7 @@ Next.js 15 (App Router) · Drizzle ORM · Postgres · LLM provider-agnostisch (O
    | `APP_PASSWORD` | Passwort für das Web-UI |
    | `COLLECTOR_KEY` | langer Zufallsstring; Shared Secret für das Userscript |
    | `NEXT_PUBLIC_APP_URL` | die öffentliche Railway-URL, z.B. `https://…up.railway.app` |
+   | `DAILY_LIMIT` | optional, max. veröffentlichte Kommentare pro Tag (Default 10) — nicht hochdrehen |
    Die Anbindung ist provider-agnostisch (OpenAI-kompatibles Chat-Completions-Format mit
    Function-Calling). **Anbieter und Modelle wählst du im UI unter `/settings`** — inkl.
    Modell-Dropdown vom Anbieter und getrennten Modellen für Triage (billig/frei reicht) und
@@ -57,6 +58,20 @@ npm install
 npm run db:push
 npm run dev
 ```
+
+## Workflows für Claude (in Chrome)
+
+Statt selbst zu scrollen: In `prompts/` liegen zwei fertige Arbeitsanweisungen für Claude in
+Chrome (oder eine Claude-Code-Session mit Chrome-Zugriff):
+
+- **`chrome-sammeln.md`** — holt die Watchlist, besucht die Activity-Seiten, sammelt neue Posts
+  ein und stößt die Triage an. Nur lesen, menschliches Tempo.
+- **`chrome-publishen.md`** — holt in der App **einzeln freigegebene** Kommentare aus der Outbox
+  und veröffentlicht sie: Text exakt einfügen, absenden, verifizieren, zurückmelden. Respektiert
+  `DAILY_LIMIT`, wartet 60–120s zwischen Kommentaren, bricht bei Captchas sofort ab.
+
+Das Tampermonkey-Userscript bleibt als manueller Weg erhalten (Panel auf LinkedIn), ist aber
+optional.
 
 ## Ablauf
 

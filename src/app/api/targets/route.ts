@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { watchTargets, capturedPosts } from "@/lib/schema";
-import { requireUser, bad } from "@/lib/guard";
+import { requireUser, requireUserOrCollector, bad } from "@/lib/guard";
 import { asc, desc, eq, sql } from "drizzle-orm";
 
-export async function GET() {
-  const g = await requireUser();
+export async function GET(req: NextRequest) {
+  // Auch für den Sammel-Workflow im Browser (x-collector-key) zugänglich.
+  const g = await requireUserOrCollector(req);
   if (g) return g;
   const rows = await db
     .select({
@@ -27,7 +28,13 @@ export async function GET() {
     .groupBy(watchTargets.id)
     .orderBy(desc(watchTargets.active), asc(watchTargets.priority), asc(watchTargets.name));
 
-  return NextResponse.json({ targets: rows.map((t) => ({ ...t, _count: { posts: t.postCount } })) });
+  return NextResponse.json({
+    targets: rows.map((t) => ({
+      ...t,
+      activityUrl: t.profileUrl.replace(/\/$/, "") + "/recent-activity/all/",
+      _count: { posts: t.postCount },
+    })),
+  });
 }
 
 export async function POST(req: NextRequest) {
