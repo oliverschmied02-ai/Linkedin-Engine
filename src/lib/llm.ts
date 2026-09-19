@@ -50,7 +50,23 @@ export async function structured<T>(opts: {
   const settings = await getLlmSettings();
   const model = opts.task === "triage" ? settings.modelTriage : settings.modelGenerate;
 
-  const res = await fetch(`${settings.baseUrl}/chat/completions`, {
+  // Manche Modelle (v.a. Reasoning-Modelle) ignorieren tool_choice und schreiben JSON
+  // in den Text — wird das von max_tokens abgeschnitten, einmal mit mehr Budget wiederholen.
+  let maxTokens = opts.maxTokens ?? 2000;
+  for (let attempt = 0; ; attempt++) {
+    const { value, truncated } = await request<T>(settings.baseUrl, model, { ...opts, maxTokens });
+    if (value !== undefined) return value;
+    if (attempt >= 1 || !truncated) throw new Error(`LLM-Antwort abgeschnitten (${model}, max_tokens=${maxTokens})`);
+    maxTokens = Math.min(maxTokens * 3, 8000);
+  }
+}
+
+async function request<T>(
+  baseUrl: string,
+  model: string,
+  opts: { system: string; user: string; tool: ToolDef; maxTokens: number; temperature?: number }
+): Promise<{ value?: T; truncated: boolean }> {
+  const res = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -60,7 +76,7 @@ export async function structured<T>(opts: {
     },
     body: JSON.stringify({
       model,
-      max_tokens: opts.maxTokens ?? 2000,
+      max_tokens: opts.maxTokens,
       temperature: opts.temperature ?? 0.7,
       messages: [
         { role: "system", content: opts.system },
@@ -87,6 +103,7 @@ export async function structured<T>(opts: {
 
   const data = (await res.json()) as {
     choices?: Array<{
+      finish_reason?: string;
       message?: {
         content?: string | null;
         tool_calls?: Array<{ function?: { name?: string; arguments?: string } }>;
@@ -94,10 +111,17 @@ export async function structured<T>(opts: {
     }>;
   };
 
-  const message = data.choices?.[0]?.message;
+  const choice = data.choices?.[0];
+  const message = choice?.message;
+  const truncated = choice?.finish_reason === "length";
   const call = message?.tool_calls?.find((c) => c.function?.name === opts.tool.name) ?? message?.tool_calls?.[0];
-  if (call?.function?.arguments) return parseJsonLoose(call.function.arguments) as T;
-  if (message?.content) return parseJsonLoose(message.content) as T;
-
+  try {
+    if (call?.function?.arguments) return { value: parseJsonLoose(call.function.arguments) as T, truncated };
+    if (message?.content) return { value: parseJsonLoose(message.content) as T, truncated };
+  } catch (e) {
+    if (truncated) return { truncated }; // abgeschnitten → Aufrufer wiederholt mit mehr Budget
+    throw e;
+  }
+  if (truncated) return { truncated };
   throw new Error("Das Modell hat kein strukturiertes Ergebnis geliefert");
 }

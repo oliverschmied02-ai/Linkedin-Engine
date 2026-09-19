@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
           profileSummary: summary,
         }),
         tool: TRIAGE_TOOL,
-        maxTokens: 700,
+        maxTokens: 1600,
         temperature: 0.2,
       });
       await db
